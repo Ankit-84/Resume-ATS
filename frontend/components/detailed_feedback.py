@@ -12,6 +12,8 @@ def _group_by_severity(issues: List[Dict[str, Any]]) -> Dict[str, List[Dict[str,
     grouped: Dict[str, List[Dict[str, Any]]] = {level: [] for level in SEVERITY_ORDER}
     for issue in issues:
         level = (issue.get("severity_level") or "low").lower()
+        if level == "moderate":
+            level = "medium"
         grouped.setdefault(level, []).append(issue)
     return grouped
 
@@ -37,19 +39,19 @@ def _render_issue(issue: Dict[str, Any]) -> None:
         unsafe_allow_html=True,
     )
 
-    with st.expander("Details", expanded=False):
+    with st.expander("Details", expanded=True):
         if explanation:
             st.markdown(f"**What's happening:** {explanation}")
         if where:
-            st.markdown(f"**Where it appears:** {where}")
+            st.markdown(f"**Where to improve it:** {where}")
         if how_to_fix:
-            st.markdown(f"**How to fix:** {how_to_fix}")
+            st.markdown(f"**What to add or use:** {how_to_fix}")
         if action_items:
             st.markdown("**Action items:**")
             for item in action_items:
                 st.markdown(f"- {item}")
         if example:
-            st.markdown("**Example improvement:**")
+            st.markdown("**Example for your resume:**")
             st.code(example, language="text")
 
 

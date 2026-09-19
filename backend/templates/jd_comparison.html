@@ -207,12 +207,12 @@
             </div>
             {% if issue.where_it_appears %}
             <div class="issue-detail-row">
-                <span class="detail-label">Location</span>
+                <span class="detail-label">Where to improve</span>
                 <span class="detail-value">{{ issue.where_it_appears }}</span>
             </div>
             {% endif %}
             <div class="fix-box">
-                <strong>How to Fix:</strong>
+                <strong>What to add or use:</strong>
                 {{ issue.how_to_fix }}
             </div>
             {% if issue.action_items %}
@@ -226,7 +226,7 @@
             <div style="margin-top:10px; background:#f8fafc; border:1px solid #e2e8f0;
                         border-radius:6px; padding:10px 14px; font-size:12px; color:#334155;">
                 <strong style="font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:#94a3b8;">
-                    Example:
+                    Example for your resume:
                 </strong>
                 <pre style="margin:6px 0 0 0; white-space:pre-wrap; font-family:monospace; font-size:11px; color:#334155;">{{ issue.example_improvement }}</pre>
             </div>
@@ -253,12 +253,12 @@
             </div>
             {% if issue.where_it_appears %}
             <div class="issue-detail-row">
-                <span class="detail-label">Location</span>
+                <span class="detail-label">Where to improve</span>
                 <span class="detail-value">{{ issue.where_it_appears }}</span>
             </div>
             {% endif %}
             <div class="fix-box">
-                <strong>How to Fix:</strong>
+                <strong>What to add or use:</strong>
                 {{ issue.how_to_fix }}
             </div>
             {% if issue.action_items %}
@@ -267,6 +267,15 @@
                 <li>{{ step }}</li>
                 {% endfor %}
             </ul>
+            {% endif %}
+            {% if issue.example_improvement %}
+            <div style="margin-top:10px; background:#f8fafc; border:1px solid #e2e8f0;
+                        border-radius:6px; padding:10px 14px; font-size:12px; color:#334155;">
+                <strong style="font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:#94a3b8;">
+                    Example for your resume:
+                </strong>
+                <pre style="margin:6px 0 0 0; white-space:pre-wrap; font-family:monospace; font-size:11px; color:#334155;">{{ issue.example_improvement }}</pre>
+            </div>
             {% endif %}
         </div>
     </div>
@@ -284,10 +293,25 @@
         </div>
         <div class="issue-body">
             <p class="issue-explanation">{{ issue.explanation }}</p>
+            {% if issue.where_it_appears %}
+            <div class="issue-detail-row">
+                <span class="detail-label">Where to improve</span>
+                <span class="detail-value">{{ issue.where_it_appears }}</span>
+            </div>
+            {% endif %}
             <div class="fix-box">
-                <strong>How to Fix:</strong>
+                <strong>What to add or use:</strong>
                 {{ issue.how_to_fix }}
             </div>
+            {% if issue.example_improvement %}
+            <div style="margin-top:10px; background:#f8fafc; border:1px solid #e2e8f0;
+                        border-radius:6px; padding:10px 14px; font-size:12px; color:#334155;">
+                <strong style="font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:#94a3b8;">
+                    Example for your resume:
+                </strong>
+                <pre style="margin:6px 0 0 0; white-space:pre-wrap; font-family:monospace; font-size:11px; color:#334155;">{{ issue.example_improvement }}</pre>
+            </div>
+            {% endif %}
         </div>
     </div>
     {% endfor %}

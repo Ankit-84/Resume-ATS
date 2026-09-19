@@ -8,7 +8,9 @@ from groq import Groq
 logger=logging.getLogger('ats_resume_scorer')
 
 
-GROQ_MODEL='llama-3.3-70b-versatile'
+# Use a currently available Groq model; the previous Llama model was retired.
+GROQ_MODEL='openai/gpt-oss-20b'
+GROQ_TIMEOUT_SECONDS = 90
 
 _client=None
 
@@ -19,7 +21,11 @@ def _get_client()->Groq:
 
         if not api_key:
             raise ValueError("GROQ_API_KEY environment variable not set")
-        _client=Groq(api_key=api_key)
+        _client=Groq(
+            api_key=api_key,
+            timeout=GROQ_TIMEOUT_SECONDS,
+            max_retries=1,
+        )
     return _client
 
 RESUME_SYSTEM_PROMPT = (
@@ -115,7 +121,7 @@ def parse_resume(raw_text: str)->Dict:
     raw_response=_call_groq(client, RESUME_SYSTEM_PROMPT, prompt)
     result=_try_parse_json(raw_response)
 
-    if result is None:
+    if result is not None:
         return _validate_resume_result(result)
     
 

@@ -9,6 +9,8 @@ from frontend.components.jd_comparison import display_jd_comparison
 from frontend.components.detailed_feedback import display_detailed_feedback
 from frontend.components.action_items import display_action_items
 from frontend.components.recommendations import display_recommendations
+from frontend.components.enhancement_lab import display_enhancement_lab
+from frontend.components.resume_upgrade import display_section_completeness, display_rewrite_mode
 
 
 def display_results_dashboard(analysis: Dict[str, Any]) -> None:
@@ -20,6 +22,9 @@ def display_results_dashboard(analysis: Dict[str, Any]) -> None:
     section reads the fields it needs directly.
     """
     display_overall_score(analysis)
+    st.markdown("---")
+
+    display_section_completeness(analysis)
     st.markdown("---")
 
     display_score_breakdown(analysis)
@@ -41,6 +46,12 @@ def display_results_dashboard(analysis: Dict[str, Any]) -> None:
         st.markdown("---")
 
     display_detailed_feedback(analysis)
+    st.markdown("---")
+
+    display_enhancement_lab(analysis)
+    st.markdown("---")
+
+    display_rewrite_mode(analysis)
     st.markdown("---")
 
     display_action_items(analysis)

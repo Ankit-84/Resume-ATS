@@ -1,21 +1,42 @@
+import os
+import time
+from pathlib import Path
 from typing import Any, Dict, List
 
 import requests
 import streamlit as st
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv(Path(__file__).resolve().parents[2] / ".env")
+except ImportError:
+    pass
 
-DEFAULT_BACKEND_URL = "http://localhost:8000"
+
+DEFAULT_BACKEND_URL = "http://127.0.0.1:8000"
 
 
 def _backend_url() -> str:
     try:
-        return st.secrets["backend"]["url"]
+        configured_url = st.secrets["backend"]["url"]
     except (KeyError, FileNotFoundError):
-        return DEFAULT_BACKEND_URL
+        configured_url = os.getenv("BACKEND_URL") or os.getenv("url")
+    backend_url = (configured_url or DEFAULT_BACKEND_URL).rstrip("/")
+    return backend_url.replace("://localhost", "://127.0.0.1", 1)
 
 
 def _auth_headers(access_token: str) -> Dict[str, str]:
     return {"Authorization": f"Bearer {access_token}"}
+
+
+def _request_with_retry(method: str, url: str, **kwargs):
+    for attempt in range(12):
+        try:
+            return requests.request(method, url, **kwargs)
+        except requests.ConnectionError:
+            if attempt == 11:
+                raise
+            time.sleep(5)
 
 
 def health_check() -> Dict[str, Any]:
@@ -33,12 +54,13 @@ def analyze_resume(
         "resume": (resume_file.name, resume_file.getvalue(), resume_file.type),
     }
     data = {"job_description": job_description}
-    response = requests.post(
+    response = _request_with_retry(
+        "POST",
         f"{_backend_url()}/api/v1/analyze-resume",
         files=files,
         data=data,
         headers=_auth_headers(access_token),
-        timeout=180,
+        timeout=300,
     )
     response.raise_for_status()
     return response.json()

@@ -2,6 +2,7 @@ import logging
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
+from starlette.concurrency import run_in_threadpool
 
 from backend.api.auth import get_current_user
 from backend.models.schemas import AnalysisResponse, ComponentScores, JDComparison, SkillValidationDetails
@@ -58,11 +59,12 @@ async def analyze_resume(
     try:
         from backend.services.resume_analyzer import analyze_full_resume
         
-        result = analyze_full_resume(
+        result = await run_in_threadpool(
+            analyze_full_resume,
             resume_text=resume_text,
             nlp=nlp,
             embedder=embedder,
-            job_description=job_description
+            job_description=job_description,
         )
     except Exception as exc:
         logger.error(f'Full analysis pipeline failed: {exc}')
@@ -99,6 +101,9 @@ async def analyze_resume(
         component_scores=ComponentScores(**result['component_scores']),
         issues_summary=result['issues_summary'],
         detailed_feedback=detailed_fb,
+        enhancement_suggestions=result.get('enhancement_suggestions', []),
+        section_completeness=result.get('section_completeness'),
+        rewrite_mode=result.get('rewrite_mode', []),
         jd_match_analysis=jd_comparison_result,
         skill_validation_details=skill_val_details,
 

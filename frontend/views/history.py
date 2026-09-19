@@ -3,6 +3,7 @@ import streamlit as st
 from datetime import datetime
 
 from frontend.services import api_client
+from frontend.components.version_compare import display_version_compare
 
 def _show_backend_error(exc: Exception) -> None:
     if isinstance(exc, requests.ConnectionError):
@@ -104,6 +105,8 @@ def render() -> None:
     # ==========================================
     st.markdown(f"### 📈 Your Track Record (Total: {len(history)})")
     st.write("")
+    display_version_compare(history)
+    st.markdown("---")
 
     for idx, entry in enumerate(history):
         filename = entry.get("filename", "resume.pdf")

@@ -6,6 +6,8 @@ from backend.services.groq_parser import parse_resume, parse_job_description
 from backend.services.jd_matcher import compare_resume_with_jd
 from backend.services.feedback_engine import analyze_issues, generate_issues_summary
 from backend.services.ats_scorer import calculate_overall_score, validate_skills_with_projects
+from backend.services.enhancement_engine import generate_enhancement_suggestions
+from backend.services.resume_features import build_rewrite_mode, build_section_completeness
 
 
 def analyze_full_resume(
@@ -115,6 +117,16 @@ def analyze_full_resume(
         "validation_pct":  val_pct,
     }
 
+    enhancement_suggestions = generate_enhancement_suggestions(
+        resume_text=resume_text,
+        parsed_resume=parsed_resume,
+        scores=scores,
+        skill_validation=skill_validation,
+        jd_keywords=jd_keywords,
+    )
+    section_completeness = build_section_completeness(parsed_resume)
+    rewrite_mode = build_rewrite_mode(parsed_resume, enhancement_suggestions)["cards"]
+
     return {
         "ATS_score":          scores['overall_score'],
         "ats_score":          scores['overall_score'],
@@ -141,6 +153,9 @@ def analyze_full_resume(
         "strengths": _generate_strengths(parsed_resume, skills, projects, action_verbs, skill_validation, scores),
         "interpretation":    scores.get('overall_interpretation', ''),
         "skill_validation_details": skill_validation_details,
+        "enhancement_suggestions": enhancement_suggestions,
+        "section_completeness": section_completeness,
+        "rewrite_mode": rewrite_mode,
         "experience_months": experience_months,
     }
 

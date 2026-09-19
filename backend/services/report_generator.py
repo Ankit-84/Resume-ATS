@@ -117,6 +117,10 @@ def generate_html_reports(analysis_data: Dict) -> Dict[str, str]:
         'validation_pct':     validation_pct,
         # JD analysis
         'jd_analysis':        jd_raw,
+        # Personalized ATS rewrite guidance
+        'enhancement_suggestions': analysis_data.get('enhancement_suggestions', []),
+        'section_completeness': analysis_data.get('section_completeness') or {},
+        'rewrite_mode': analysis_data.get('rewrite_mode', []),
     }
 
     return {

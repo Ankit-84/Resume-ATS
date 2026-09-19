@@ -27,6 +27,12 @@ for key, default in [
     if key not in st.session_state:
         st.session_state[key] = default
 
+# Clear analysis results created before the Enhancement Lab response field existed.
+if st.session_state.get("scorer_analysis_version") != 2:
+    st.session_state.pop("scorer_analysis", None)
+    st.session_state.pop("scorer_pdf_bytes", None)
+    st.session_state.scorer_analysis_version = 2
+
 # If we just came back from Google OAuth, Supabase appends `?code=<authcode>`
 # to the redirect URL. Exchange it for a session before rendering anything.
 if (

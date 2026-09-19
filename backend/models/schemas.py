@@ -32,11 +32,42 @@ class IssueDetail(BaseModel):
     action_items: List[str] = []
     example_improvement: str
 
+class EnhancementSuggestion(BaseModel):
+    priority: str
+    category: str
+    title: str
+    what_to_change: str
+    where_to_place: str
+    current_text: str
+    example: str
+    ats_reason: str
+
+class ResumeSectionCheck(BaseModel):
+    key: str
+    label: str
+    complete: bool
+    tip: str
+
+class ResumeCompleteness(BaseModel):
+    sections: List[ResumeSectionCheck]
+    completed: int
+    total: int
+    percentage: int
+
+class RewriteCard(BaseModel):
+    section: str
+    before: str
+    after: str
+    why: str
+
 class AnalysisResponse(BaseModel):
     ATS_score: float
     component_scores: ComponentScores
     issues_summary: List[str]
     detailed_feedback: List[IssueDetail]
+    enhancement_suggestions: List[EnhancementSuggestion] = []
+    section_completeness: Optional[ResumeCompleteness] = None
+    rewrite_mode: List[RewriteCard] = []
     jd_match_analysis: Optional[JDComparison] = None
     skill_validation_details: Optional[SkillValidationDetails] = None
 

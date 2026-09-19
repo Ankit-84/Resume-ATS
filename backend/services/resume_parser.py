@@ -1,5 +1,5 @@
 import io
-import magic
+import zipfile
 from typing import Tuple, Optional, Tuple
 
 import pdfplumber
@@ -28,6 +28,27 @@ class FileParsingError(Exception):
 class FileValidationError(Exception):
     pass
 
+
+def _detect_mime_type(file_data: bytes) -> str | None:
+    """Detect supported document types without requiring native libmagic on Windows."""
+    # Recognize the formats this application accepts before consulting libmagic.
+    # This keeps Windows uploads independent of the optional native library.
+    if file_data.startswith(b'%PDF-'):
+        return 'application/pdf'
+    if file_data.startswith(b'\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1'):
+        return 'application/msword'
+    if file_data.startswith(b'PK'):
+        try:
+            with zipfile.ZipFile(io.BytesIO(file_data)) as archive:
+                names = set(archive.namelist())
+            if '[Content_Types].xml' in names and 'word/document.xml' in names:
+                return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        except zipfile.BadZipFile:
+            pass
+
+    return None
+
+
 def validate_file(file_data:bytes, filename:str)->Tuple[bool, str, Optional[str]]:
     file_size_bytes = len(file_data)
     if file_size_bytes > MAX_FILE_SIZE_BYTES:
@@ -40,10 +61,9 @@ def validate_file(file_data:bytes, filename:str)->Tuple[bool, str, Optional[str]
     if file_size_bytes==0:
         return False, 'uploade file is empty...please check the file you have uploaded and try again'
     
-    try:
-        mime_type=magic.from_buffer(file_data, mime=True)
-    except Exception as e:
-        return False, f"error deteminin the file type : {e}", None
+    mime_type = _detect_mime_type(file_data)
+    if mime_type is None:
+        return False, 'Could not determine the file type. Please upload a valid PDF or DOCX file.', None
     
     if mime_type not in SUPPORTED_MIME_TYPES:
         supported=', '.join(SUPPORTED_MIME_TYPES.keys()).upper()

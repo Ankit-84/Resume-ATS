@@ -1,4 +1,5 @@
 import logging
+import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,6 +16,11 @@ from backend.api.routes import router
 
 logger=logging.getLogger('ats_resume_scorer')
 
+# Sentence Transformers uses PyTorch here; prevent Transformers from probing the
+# incompatible TensorFlow installation present in some Windows environments.
+os.environ.setdefault('USE_TF', '0')
+os.environ.setdefault('TRANSFORMERS_NO_TF', '1')
+
 @asynccontextmanager
 async def lifespan(app:FastAPI):
     logger.info('Starting ATS Resume Analyzer API...')
@@ -26,8 +32,15 @@ async def lifespan(app:FastAPI):
         logger.info(f'Loaded {SPACY_MODEL_PRIMARY}')
     except OSError:
         logger.warning(f'{SPACY_MODEL_PRIMARY} not found — falling back to {SPACY_MODEL_SECONDARY}')
-        app.state.nlp = spacy.load(SPACY_MODEL_SECONDARY)
-        logger.info(f'Loaded {SPACY_MODEL_SECONDARY} (fallback)')
+        try:
+            app.state.nlp = spacy.load(SPACY_MODEL_SECONDARY)
+            logger.info(f'Loaded {SPACY_MODEL_SECONDARY} (fallback)')
+        except OSError:
+            logger.warning(
+                'No spaCy English model is installed; using a blank English pipeline. '
+                'Entity-based location detection will be unavailable.'
+            )
+            app.state.nlp = spacy.blank('en')
 
     logger.info(f'Loading SentenceTransformer: {SENTENCE_TRANSFORMER_MODEL}')
     from sentence_transformers import SentenceTransformer

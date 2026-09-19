@@ -1,105 +1,334 @@
-<div align="center">
+# Resume ATS Scorer
 
-# 🎯 AI-Powered Resume ATS Scorer & Optimization Platform
+AI-powered resume analysis and job-application optimization platform built with FastAPI, Streamlit, spaCy, Sentence Transformers, Groq, and Supabase.
 
-> *Bypass automated applicant tracking systems with local, privacy-first AI analysis and targeted job description matching.*
+## Overview
 
-</div>
+Resume ATS Scorer helps candidates understand how an Applicant Tracking System may evaluate a resume and gives practical, ready-to-use improvements. It supports PDF and DOCX uploads, optional job-description matching, skill evidence validation, rewrite suggestions, version comparisons, and downloadable reports.
 
----
+The application uses a decoupled architecture:
 
-## 🚀 Overview
+- `backend/`: FastAPI API, document parsing, scoring, AI analysis, persistence, and PDF generation.
+- `frontend/`: Streamlit interface, authentication flow, analysis dashboard, history, and exports.
+- `ml model/`: Local Sentence Transformer model assets and evaluation files.
 
-The **ATS Resume Scorer** is a full-stack web application designed to help job seekers optimize their resumes for Applicant Tracking Systems (ATS) like Workday, Taleo, and Greenhouse. Unlike cloud-based tools that send your personal data to external APIs, this platform runs its natural language processing and semantic models locally, ensuring **100% privacy and security**.
+## Features
 
----
+### ATS scoring
 
-## ✨ Key Features
+The scoring engine evaluates five weighted dimensions:
 
-* **📊 5-Dimension Scoring Engine:** Grades your resume across Formatting (20%), Keywords & Skills (25%), Content Quality (25%), Skill Validation (15%), and ATS Compatibility (15%).
-* **🎯 Targeted Job Description Matching:** Compare your resume directly against a specific job description to compute match percentages and surface missing skills or keyword gaps.
-* **🤖 Semantic AI Skill Validation:** Uses local sentence transformers to verify that your claimed skills are backed up by real achievements and projects in your work experience.
-* **🔒 Secure User Authentication:** Powered by **Supabase** for secure email/password login and Google OAuth integration.
-* **📈 Historical Tracking:** Automatically saves past analyses to your account so you can track your optimization progress over time.
-* **📄 Professional PDF Export:** Generate and download comprehensive, beautifully formatted PDF reports of your resume analysis.
+| Dimension | Weight |
+| --- | ---: |
+| Formatting | 20% |
+| Keywords and skills | 25% |
+| Content quality | 25% |
+| Skill validation | 15% |
+| ATS compatibility | 15% |
 
----
+### Job-description matching
 
-## 🛠️ Tech Stack
+Paste a job description or upload a `.txt` file to calculate:
 
-* **Frontend:** Python, Streamlit (Custom responsive design with modern top navigation, mobile drawers, and interactive dashboards).
-* **Backend:** FastAPI, Uvicorn, Pydantic.
-* **AI / NLP Engine:** spaCy (`en_core_web_md`), Sentence-Transformers, PyTorch.
-* **Database & Auth:** Supabase (PostgreSQL).
-* **Document Parsing:** PyPDF / python-docx.
+- Match percentage
+- Semantic similarity
+- Matched keywords
+- Missing keywords
+- Skills gap
 
----
+### Skill validation
 
-## 📦 Package Installation & Setup
+The platform checks whether skills listed in the resume are supported by project or experience evidence. It identifies validated skills, unsupported skills, and the evidence locations found.
 
-Follow these steps to set up the project environment on your local machine:
+### ATS Enhancement Lab
 
-### 1. Clone the Repository
-```bash
-git clone [https://github.com/your-username/Resume-ATS.git](https://github.com/your-username/Resume-ATS.git)
-cd Resume-ATS
- 
----
+Generates targeted improvements based on the analysis:
 
-## 2. Install Required Python Packages
-```bash 
-pip install --upgrade pip
-pip install -r requirements.txt
+- What to change
+- Where to place the change
+- Current resume signal
+- Ready-to-adapt example
+- ATS reason
+- Priority level
 
-## 3. Download spaCy Language Model
-Run the following command to download the required medium English web model for NLP parsing:
+### Resume section completeness
 
-```bash
+The analysis dashboard checks for:
+
+- Contact information
+- Professional summary
+- Skills
+- Experience
+- Projects
+- Education
+- Certifications
+- LinkedIn, GitHub, or portfolio links
+
+It returns a completion percentage and practical tips for missing sections.
+
+### Resume Rewrite Mode
+
+Provides before-and-after rewrite cards for:
+
+- Professional summary
+- Experience bullets
+- Project descriptions
+- Skills section
+
+The suggested text is editable in Streamlit and includes a browser copy button. Suggestions are starting points and should only retain claims that are truthful.
+
+### Resume version tracking
+
+Saved analyses can be compared from the History page. Version comparison shows:
+
+- ATS score delta
+- Matched keyword changes
+- Skill validation change
+- Job-description match change
+- Added keywords
+- Removed keywords
+
+### PDF reports
+
+The application generates a multi-section PDF report containing score breakdowns, skill validation, job matching, recommendations, completeness, and rewrite suggestions.
+
+On Windows, ReportLab is used automatically because WeasyPrint requires GTK/Pango native libraries. On Linux or other supported environments, WeasyPrint can be used when its native dependencies are installed.
+
+### Authentication and history
+
+Supabase provides:
+
+- Email/password sign-in
+- Account registration
+- Google OAuth flow
+- Saved analysis history
+- Per-user history deletion
+
+## Technology stack
+
+- Python 3.12+
+- FastAPI and Uvicorn
+- Streamlit
+- Pydantic
+- spaCy and `en_core_web_md`/`en_core_web_sm`
+- Sentence Transformers and PyTorch
+- Groq API with `openai/gpt-oss-20b`
+- Supabase Auth and PostgreSQL REST API
+- pdfplumber, PyPDF2, and python-docx
+- Jinja2
+- ReportLab PDF fallback
+- RapidFuzz keyword matching
+
+## Project structure
+
+```text
+Resume-ATS/
+|-- backend/
+|   |-- api/
+|   |   |-- auth.py              JWT verification
+|   |   `-- routes.py            Analysis, history, and PDF endpoints
+|   |-- core/config.py           Environment and scoring configuration
+|   |-- database/supabase_db.py  History persistence
+|   |-- models/schemas.py        API response models
+|   |-- services/
+|   |   |-- ats_scorer.py        Weighted ATS scoring
+|   |   |-- enhancement_engine.py Targeted improvement suggestions
+|   |   |-- feedback_engine.py   Resume issue detection
+|   |   |-- groq_parser.py       Structured resume/JD extraction
+|   |   |-- report_generator.py  HTML report rendering
+|   |   |-- resume_analyzer.py   Main analysis orchestration
+|   |   |-- resume_features.py   Completeness and rewrite mode
+|   |   `-- pdf_export.py        WeasyPrint/ReportLab PDF output
+|   |-- templates/               HTML report templates
+|   `-- main.py                  FastAPI app and model startup
+|-- frontend/
+|   |-- components/              Dashboard and feature components
+|   |-- services/                API and Supabase clients
+|   |-- views/                   Landing, scorer, history, auth, resources
+|   `-- streamlit_app.py         Streamlit entry point
+|-- ml model/                    Local model assets
+|-- requirements.txt
+`-- README.md
+```
+
+## Requirements
+
+- Windows, macOS, or Linux
+- Python 3.12 or newer recommended
+- A Groq API key
+- A Supabase project for authentication and history
+- Internet access for Groq requests and first-time model downloads
+
+## Installation
+
+### Conda environment
+
+```powershell
+conda create -n resume-ats python=3.12
+conda activate resume-ats
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
+For an existing Conda `base` environment:
+
+```powershell
+conda activate base
+python -m pip install -r requirements.txt
+```
+
+### spaCy model
+
+Install the medium model for best entity and location detection:
+
+```powershell
 python -m spacy download en_core_web_md
+```
 
-## ⚙️ Environment Configuration (.env)
-Create a file named .env in the root directory of your project and paste your configuration credentials below:
+If the medium model is unavailable, the backend tries `en_core_web_sm`, then starts with a blank English pipeline. The application remains usable, but entity-based location detection is reduced.
 
-```.env
-GROQ_API_KEY="PASTE_YOUR_GROQ_API_KEY_HERE"
-SENTENCE_TRANSFORMER_MODEL="all-MiniLM-L6-v2"
+## Environment configuration
 
-DATABASE_URL="PASTE_YOUR_POSTGRES_DATABASE_URL_HERE"
+Create `.env` in the project root. Never commit this file or expose its values publicly.
 
-SUPABASE_URL="PASTE_YOUR_SUPABASE_URL_HERE"
-SUPABASE_KEY="PASTE_YOUR_SUPABASE_KEY_HERE"
-SUPABASE_ANON_KEY="PASTE_YOUR_SUPABASE_ANON_KEY_HERE"
-AUTH_REDIRECT_URL="http://localhost:8501"
+```env
+GROQ_API_KEY=your_groq_api_key
+SENTENCE_TRANSFORMER_MODEL=all-MiniLM-L6-v2
 
-## 🚀 Running the Application
-Because this application uses a decoupled architecture, you need to run two separate terminal windows simultaneously.
+SUPABASE_URL=https://your-project-ref.supabase.co
+SUPABASE_KEY=your_server_key
+SUPABASE_ANON_KEY=your_anon_key
+SUPABASE_JWT_SECRET=your_jwt_secret
+AUTH_REDIRECT_URL=http://localhost:8501
 
-Terminal 1: Start the FastAPI Backend Server
+BACKEND_URL=http://127.0.0.1:8000
+```
 
-```bash
-uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
+The backend uses `SUPABASE_KEY` for server-side history operations. The frontend uses `SUPABASE_ANON_KEY` for authentication. Do not use placeholder values in a running environment.
 
-Terminal 2: Start the Streamlit Frontend Client
-Open a brand new terminal window, activate your virtual environment, and launch the UI:
+## Run locally
 
-```bash
-streamlit run frontend/streamlit_app.py
+Start the backend from the project root in Terminal 1:
 
-## 💡 Usage Guide
-Sign In / Register: Create an account or sign in using email/password or Google OAuth via the top navigation bar.
+```powershell
+conda activate base
+python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
+```
 
-Choose Mode: Select between General ATS Score (resume-only audit) or Job Description Comparison (targeted keyword match).
+Wait for:
 
-Upload: Drop your .pdf or .docx resume into the secure upload area.
+```text
+Application startup complete.
+Uvicorn running on http://127.0.0.1:8000
+```
 
-Analyze: Click Run AI Analysis and view your multi-dimensional breakdown, strength indicators, and critical gaps.
+Start the frontend in Terminal 2:
 
-Export: Download your analysis summary or generate a clean, shareable PDF report.
+```powershell
+conda activate base
+streamlit run frontend/streamlit_app.py --server.address 127.0.0.1 --server.port 8501
+```
 
-## 👨‍💻 Author & Credits
-Designed & Developed with ❤️ by Ankit Kumar
+Open:
 
-Institution: National Institute of Technology Nagaland (Computer Science & Engineering)
+- Frontend: http://127.0.0.1:8501
+- API root: http://127.0.0.1:8000
+- Swagger docs: http://127.0.0.1:8000/docs
+- ReDoc: http://127.0.0.1:8000/redoc
 
-## 📝 License
-© 2026 ATS Resume Scorer. All rights reserved.
+Avoid running multiple Uvicorn instances on port 8000. A second instance causes Windows `WinError 10048` because the port is already in use.
+
+## User workflow
+
+1. Open the Streamlit frontend.
+2. Sign in or create an account.
+3. Select `General ATS Score` or `Job Description Comparison`.
+4. Upload a PDF or DOCX resume up to 5 MB.
+5. Optionally paste a job description or upload a `.txt` job description.
+6. Click `Run AI Analysis`.
+7. Review the score breakdown, section checklist, Enhancement Lab, Rewrite Mode, and detailed recommendations.
+8. Generate a PDF report.
+9. Run improved resume versions again and compare them from History.
+
+## API endpoints
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `GET` | `/` | API metadata and route summary |
+| `GET` | `/api/v1/health` | Model readiness check |
+| `POST` | `/api/v1/analyze-resume` | Analyze PDF or DOCX resume |
+| `GET` | `/api/v1/history` | Get signed-in user history |
+| `DELETE` | `/api/v1/history/{analysis_id}` | Delete a saved analysis |
+| `POST` | `/api/v1/generate-pdf` | Generate a PDF from analysis data |
+| `GET` | `/api/v1/history/{analysis_id}/pdf` | Generate a saved analysis PDF |
+
+Protected endpoints require:
+
+```text
+Authorization: Bearer <supabase_access_token>
+```
+
+## Troubleshooting
+
+### Port 8000 is already in use
+
+Find the process:
+
+```powershell
+Get-NetTCPConnection -LocalPort 8000 -State Listen
+```
+
+Stop the matching Uvicorn process, then start one backend instance.
+
+### `libmagic` or `failed to find libmagic`
+
+The current parser detects supported PDF, DOC, and DOCX signatures without requiring native `libmagic`, so restart Uvicorn after pulling the latest code.
+
+### WeasyPrint GTK/Pango warning on Windows
+
+The application automatically uses ReportLab on Windows. Restart the backend after changing PDF code and regenerate the report.
+
+### Groq model not found
+
+The configured parser model is `openai/gpt-oss-20b`. Confirm that the Groq key has access to this model and that the backend loaded the current code.
+
+### Missing spaCy model
+
+Run:
+
+```powershell
+python -m spacy download en_core_web_sm
+```
+
+If downloads are blocked, the blank English fallback allows startup with reduced NER-based detection.
+
+### Features do not appear
+
+Restart both services and run a fresh analysis. Existing Streamlit session data or saved analyses created before the new response fields will not contain completeness, rewrite, or Enhancement Lab data.
+
+## Validation
+
+Basic project validation:
+
+```powershell
+python -m compileall -q backend frontend
+```
+
+Runtime smoke checks:
+
+```powershell
+Invoke-WebRequest http://127.0.0.1:8000/api/v1/health
+Invoke-WebRequest http://127.0.0.1:8501/
+```
+
+## Security notes
+
+- Keep `.env` out of version control.
+- Rotate credentials if they were ever shared or committed.
+- Do not expose Supabase service keys or Groq keys in frontend code.
+- Use HTTPS and secure secret storage for deployment.
+- Treat generated rewrite examples as suggestions and verify every claim before using it.
+
+## License
+
+Copyright 2026 ATS Resume Scorer. All rights reserved.
