@@ -1,4 +1,5 @@
 from typing import List, Dict
+import re
 import numpy as np
 import spacy
 from sentence_transformers import SentenceTransformer
@@ -49,10 +50,18 @@ def analyze_skills_gap(
         if ent.label_ in ['PRODUCT', 'ORG', 'LANGUAGE']:
             jd_skills.add(ent.text.lower())
 
-    for chunk in doc.noun_chunks:
-        ct = chunk.text.lower().strip()
-        if 1 <= len(ct.split()) <= 4:
-            jd_skills.add(ct)
+    # Blank spaCy pipelines and pipelines without a parser cannot provide
+    # noun_chunks. Keep JD analysis usable when the optional model is absent.
+    if doc.has_annotation("DEP"):
+        for chunk in doc.noun_chunks:
+            ct = chunk.text.lower().strip()
+            if 1 <= len(ct.split()) <= 4:
+                jd_skills.add(ct)
+    else:
+        for phrase in re.findall(r"[A-Za-z][A-Za-z0-9+#./-]*(?:\s+[A-Za-z][A-Za-z0-9+#./-]*){0,3}", jd_text[:5000]):
+            phrase = phrase.lower().strip()
+            if phrase not in {"the", "and", "for", "with", "that", "this", "you", "our", "are"}:
+                jd_skills.add(phrase)
 
     # Normalize resume skills for comparison
     resume_normalized = {normalize_skill(s) for s in resume_skills}

@@ -2,8 +2,10 @@ import os
 import logging
 from pathlib import Path
 from typing import Any, Dict
+import httpx
 import streamlit as st
 from supabase import Client, create_client
+from supabase.lib.client_options import SyncClientOptions
 
 logger = logging.getLogger('ats_resume_scorer')
 
@@ -47,7 +49,12 @@ def get_client() -> Client | None:
     """Cached singleton — preserves PKCE state across Streamlit reruns."""
     if _missing_config():
         return None
-    return create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
+    http_client = httpx.Client(
+        timeout=httpx.Timeout(30.0, connect=30.0),
+        follow_redirects=True,
+    )
+    options = SyncClientOptions(httpx_client=http_client)
+    return create_client(SUPABASE_URL, SUPABASE_ANON_KEY, options=options)
 
 
 def _session_dict(session, user) -> Dict[str, Any]:
@@ -139,6 +146,8 @@ def sign_out() -> None:
 
 def _humanize(exc: Exception) -> str:
     msg = str(exc)
+    if isinstance(exc, (httpx.ConnectTimeout, httpx.ReadTimeout, TimeoutError)) or 'handshake operation timed out' in msg.lower():
+        return 'Supabase sign-in timed out while connecting. Check your internet/VPN connection and try again.'
     # supabase errors arrive as "<status>: {json blob}" — surface the human bit
     if 'invalid_grant' in msg.lower() or 'invalid login' in msg.lower():
         return 'Wrong email or password'

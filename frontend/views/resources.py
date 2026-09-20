@@ -11,6 +11,7 @@ def render():
         .resource-header {
             text-align: center;
             padding: 3rem 1.5rem;
+            margin-top : 3rem !important;
             background: linear-gradient(135deg, #10b981 0%, #047857 50%, #064e3b 100%);
             color: white;
             border-radius: 16px;
@@ -170,7 +171,7 @@ def render():
     st.markdown("### 📄 ATS-Optimized Templates")
     
     with st.container(border=True):
-        t_col1, t_col2 = st.columns([3, 1], vertical_alignment="center")
+        t_col1, t_col2 = st.columns([3, 1])
         
         with t_col1:
             st.markdown("#### The 'Zero-Fail' Template Pack")

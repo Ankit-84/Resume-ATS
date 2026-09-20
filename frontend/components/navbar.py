@@ -11,14 +11,39 @@ def render_navbar():
        
     /* Desktop Navbar Container Color */
     div[data-testid="stHorizontalBlock"]:has(#desktop-nav) {
-        /* 👇 CHANGED BACKGROUND COLOR HERE 👇 */
         background: linear-gradient(90deg, #0f172a 0%, #1e1b4b 100%);
-        
-        padding: 12px 20px;
-        border-radius: 16px;
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-        margin-bottom: 10px;
-        margin-top: 10px;
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px 18px;
+        border-radius: 0;
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
+        margin: 0;
+        min-height: 85px;
+        width: 100%;
+    
+    }
+
+    div[data-testid="stHorizontalBlock"]:has(#desktop-nav) > div {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100%;
+    }
+
+    div[data-testid="stHorizontalBlock"]:has(#desktop-nav) button {
+        min-height: 42px;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        padding: 0.45rem 0.8rem;
     }
 
     /* Mobile Sidebar Background Color (Kept Dark) */
@@ -28,16 +53,22 @@ def render_navbar():
 
     /* 1. Desktop Navbar Buttons Styling (White text, glass effect) */
     div[data-testid="stHorizontalBlock"]:has(#desktop-nav) button {
-        border-radius: 12px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        background-color: rgba(255, 255, 255, 0.05); /* Slight glassmorphism */
-        transition: all 0.3s ease;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.04);
+        transition: all 0.25s ease;
+        margin: 0 auto;
+        width: 100%;
+        box-shadow: none;
     }
     
-    /* Force button text to be white for contrast */
     div[data-testid="stHorizontalBlock"]:has(#desktop-nav) button p {
-        color: #f8fafc !important; 
+        color: #f8fafc !important;
         font-weight: 600;
+        font-size: 0.9rem;
+        margin: 0 !important;
+        line-height: 1;
+        letter-spacing: 0.01em;
     }
     
     div[data-testid="stHorizontalBlock"]:has(#desktop-nav) button:hover {
@@ -113,7 +144,7 @@ def render_navbar():
     # ==========================================
     # 💻 DESKTOP NAVBAR (Horizontal Columns)
     # ==========================================
-    cols = st.columns([1, 1.2, 1, 1.2, 2, 1.5], gap="small", vertical_alignment="center")
+    cols = st.columns([1, 1.2, 1, 1.2, 2, 1.5], gap="small")
     
     with cols[0]:
         # Unique ID anchor allows CSS to safely target this horizontal block

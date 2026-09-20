@@ -4,7 +4,7 @@ AI-powered resume analysis and job-application optimization platform built with 
 
 ## Overview
 
-Resume ATS Scorer helps candidates understand how an Applicant Tracking System may evaluate a resume and gives practical, ready-to-use improvements. It supports PDF and DOCX uploads, optional job-description matching, skill evidence validation, rewrite suggestions, version comparisons, and downloadable reports.
+Resume ATS Scorer helps candidates understand how an Applicant Tracking System may evaluate a resume and gives practical, ready-to-use improvements. It supports PDF, DOC, and DOCX uploads, optional job-description matching, skill evidence validation, rewrite suggestions, version comparisons, and downloadable reports.
 
 The application uses a decoupled architecture:
 
@@ -28,13 +28,15 @@ The scoring engine evaluates five weighted dimensions:
 
 ### Job-description matching
 
-Paste a job description or upload a `.txt` file to calculate:
+Choose between a general ATS score, a targeted comparison, or a multiple-job comparison. Paste a job description or upload a `.txt` file to calculate:
 
 - Match percentage
 - Semantic similarity
 - Matched keywords
 - Missing keywords
 - Skills gap
+
+Multiple-job comparison accepts up to five job descriptions and ranks the roles by JD match and ATS score, with tailoring priorities for each role.
 
 ### Skill validation
 
@@ -88,6 +90,8 @@ Saved analyses can be compared from the History page. Version comparison shows:
 - Added keywords
 - Removed keywords
 
+The History page also includes an ATS score timeline and live keyword suggestions for a selected saved resume. Targeted analyses provide a JD feature suite with a gap analyzer, skill-gap recommendations, and a cover-letter draft generator.
+
 ### PDF reports
 
 The application generates a multi-section PDF report containing score breakdowns, skill validation, job matching, recommendations, completeness, and rewrite suggestions.
@@ -103,6 +107,8 @@ Supabase provides:
 - Google OAuth flow
 - Saved analysis history
 - Per-user history deletion
+
+Supabase settings can be loaded from environment variables or Streamlit secrets. The frontend reads `.env` first and can fall back to `.streamlit/secrets.toml` for hosted deployments.
 
 ## Technology stack
 
@@ -143,6 +149,7 @@ Resume-ATS/
 |   `-- main.py                  FastAPI app and model startup
 |-- frontend/
 |   |-- components/              Dashboard and feature components
+|   |   |-- career_features.py    JD tools, multi-job comparison, and history insights
 |   |-- services/                API and Supabase clients
 |   |-- views/                   Landing, scorer, history, auth, resources
 |   `-- streamlit_app.py         Streamlit entry point
@@ -206,6 +213,20 @@ BACKEND_URL=http://127.0.0.1:8000
 
 The backend uses `SUPABASE_KEY` for server-side history operations. The frontend uses `SUPABASE_ANON_KEY` for authentication. Do not use placeholder values in a running environment.
 
+For Streamlit deployments, the equivalent values can be placed in `.streamlit/secrets.toml`:
+
+```toml
+[supabase]
+SUPABASE_URL = "https://your-project-ref.supabase.co"
+SUPABASE_ANON_KEY = "your_anon_key"
+
+[backend]
+url = "http://127.0.0.1:8000"
+
+[google_oauth]
+redirect_uri = "http://localhost:8501"
+```
+
 ## Run locally
 
 Start the backend from the project root in Terminal 1:
@@ -233,34 +254,36 @@ Open:
 
 - Frontend: http://127.0.0.1:8501
 - API root: http://127.0.0.1:8000
+- Health check: http://127.0.0.1:8000/api/v1/health
 - Swagger docs: http://127.0.0.1:8000/docs
 - ReDoc: http://127.0.0.1:8000/redoc
 
 Avoid running multiple Uvicorn instances on port 8000. A second instance causes Windows `WinError 10048` because the port is already in use.
 
+## API endpoints
+
+All analysis, history, and PDF routes are under `/api/v1` and require a Supabase bearer token except for the health check.
+
+| Method | Route | Purpose |
+| --- | --- | --- |
+| `POST` | `/api/v1/analyze-resume` | Analyze a PDF, DOC, or DOCX resume with an optional JD |
+| `GET` | `/api/v1/health` | Confirm that the API and its models are loaded |
+| `GET` | `/api/v1/history` | List the signed-in user's saved analyses |
+| `DELETE` | `/api/v1/history/{analysis_id}` | Delete one saved analysis |
+| `POST` | `/api/v1/generate-pdf` | Generate a PDF from an analysis response |
+| `GET` | `/api/v1/history/{analysis_id}/pdf` | Generate a PDF for a saved analysis |
+
 ## User workflow
 
 1. Open the Streamlit frontend.
 2. Sign in or create an account.
-3. Select `General ATS Score` or `Job Description Comparison`.
-4. Upload a PDF or DOCX resume up to 5 MB.
-5. Optionally paste a job description or upload a `.txt` job description.
+3. Select `General ATS Score`, `Job Description Comparison`, or `Multiple Job Comparison`.
+4. Upload a PDF, DOC, or DOCX resume up to 5 MB.
+5. Optionally paste a job description, upload a `.txt` job description, or provide up to five job descriptions for comparison.
 6. Click `Run AI Analysis`.
 7. Review the score breakdown, section checklist, Enhancement Lab, Rewrite Mode, and detailed recommendations.
-8. Generate a PDF report.
+8. Use the JD tools, generate a PDF report, or download a text summary.
 9. Run improved resume versions again and compare them from History.
-
-## API endpoints
-
-| Method | Endpoint | Purpose |
-| --- | --- | --- |
-| `GET` | `/` | API metadata and route summary |
-| `GET` | `/api/v1/health` | Model readiness check |
-| `POST` | `/api/v1/analyze-resume` | Analyze PDF or DOCX resume |
-| `GET` | `/api/v1/history` | Get signed-in user history |
-| `DELETE` | `/api/v1/history/{analysis_id}` | Delete a saved analysis |
-| `POST` | `/api/v1/generate-pdf` | Generate a PDF from analysis data |
-| `GET` | `/api/v1/history/{analysis_id}/pdf` | Generate a saved analysis PDF |
 
 Protected endpoints require:
 
@@ -268,43 +291,6 @@ Protected endpoints require:
 Authorization: Bearer <supabase_access_token>
 ```
 
-## Troubleshooting
-
-### Port 8000 is already in use
-
-Find the process:
-
-```powershell
-Get-NetTCPConnection -LocalPort 8000 -State Listen
-```
-
-Stop the matching Uvicorn process, then start one backend instance.
-
-### `libmagic` or `failed to find libmagic`
-
-The current parser detects supported PDF, DOC, and DOCX signatures without requiring native `libmagic`, so restart Uvicorn after pulling the latest code.
-
-### WeasyPrint GTK/Pango warning on Windows
-
-The application automatically uses ReportLab on Windows. Restart the backend after changing PDF code and regenerate the report.
-
-### Groq model not found
-
-The configured parser model is `openai/gpt-oss-20b`. Confirm that the Groq key has access to this model and that the backend loaded the current code.
-
-### Missing spaCy model
-
-Run:
-
-```powershell
-python -m spacy download en_core_web_sm
-```
-
-If downloads are blocked, the blank English fallback allows startup with reduced NER-based detection.
-
-### Features do not appear
-
-Restart both services and run a fresh analysis. Existing Streamlit session data or saved analyses created before the new response fields will not contain completeness, rewrite, or Enhancement Lab data.
 
 ## Validation
 

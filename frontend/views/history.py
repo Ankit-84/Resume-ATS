@@ -4,6 +4,8 @@ from datetime import datetime
 
 from frontend.services import api_client
 from frontend.components.version_compare import display_version_compare
+from frontend.components.dashboard import display_results_dashboard
+from frontend.components.career_features import render_keyword_suggestions, render_resume_timeline
 
 def _show_backend_error(exc: Exception) -> None:
     if isinstance(exc, requests.ConnectionError):
@@ -23,6 +25,7 @@ def render() -> None:
         .history-header {
             text-align: center;
             padding: 2.5rem 1rem;
+            margin-top : 3rem !important;
             background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
             color: white;
             border-radius: 16px;
@@ -105,7 +108,21 @@ def render() -> None:
     # ==========================================
     st.markdown(f"### 📈 Your Track Record (Total: {len(history)})")
     st.write("")
-    display_version_compare(history)
+    history_tabs = st.tabs(["📈 Progress Timeline", "🔑 Keyword Suggestions", "🧾 Saved Analytics", "🔄 Version Compare"])
+    with history_tabs[0]:
+        render_resume_timeline(history)
+    with history_tabs[1]:
+        render_keyword_suggestions(history)
+    with history_tabs[2]:
+        labels = [f"{item.get('filename', 'Resume')} · {str(item.get('created_at', ''))[:10]}" for item in history]
+        selected = st.selectbox("Choose an analysis", range(len(history)), format_func=lambda i: labels[i], key="history_analytics_entry")
+        selected_analysis = history[selected].get("analysis_result") or {}
+        if selected_analysis:
+            display_results_dashboard(selected_analysis)
+        else:
+            st.info("Detailed analytics are not available for this saved entry.")
+    with history_tabs[3]:
+        display_version_compare(history)
     st.markdown("---")
 
     for idx, entry in enumerate(history):
@@ -132,11 +149,12 @@ def render() -> None:
         
         with st.container(border=True):
             # 1️⃣ Top Row: Basic Info & Main Metrics
-            col_info, col_score, col_jd, col_del = st.columns([3.5, 1.5, 1.5, 0.8], vertical_alignment="center")
+            col_info, col_score, col_jd, col_del = st.columns([3.5, 1.5, 1.5, 0.8])
             
             with col_info:
                 st.markdown(f"#### 📄 {filename}")
                 st.caption(f"🕒 {display_date}")
+                st.caption(f"🎯 Matched role: {entry.get('job_title', 'General Resume')}")
                 
             with col_score:
                 st.markdown(f"<div class='score-badge {badge_class}' style='text-align: center;'>Score: {ats_score:.0f}/100</div>", unsafe_allow_html=True)
@@ -172,3 +190,14 @@ def render() -> None:
                     st.metric("Skill Validation", f"{component_scores.get('skill_validation', 0):.0f}/15")
                 with c5:
                     st.metric("ATS Parsing", f"{component_scores.get('ats_compatibility', 0):.0f}/15")
+                recommendations = (
+                    analysis.get("recommendations")
+                    or analysis.get("suggestions")
+                    or analysis.get("critical_issues")
+                    or []
+                )
+                if recommendations:
+                    st.markdown("**Previous recommendations**")
+                    for recommendation in recommendations[:8]:
+                        text = recommendation.get("message") if isinstance(recommendation, dict) else recommendation
+                        st.markdown(f"- {text}")

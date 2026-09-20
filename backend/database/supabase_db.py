@@ -77,17 +77,25 @@ async def get_user_history(user_id: str) -> List[Dict]:
             
             results = []
             for doc in docs:
+                analysis_result = doc.get("analysis_result", {}) or {}
+                experience = analysis_result.get("experience", []) or []
+                inferred_role = (
+                    analysis_result.get("target_role")
+                    or analysis_result.get("job_title")
+                    or (experience[0].get("job_title") if experience and isinstance(experience[0], dict) else None)
+                    or "General Resume"
+                )
                 results.append({
                     "id": str(doc.get("id")),
                     "filename": doc.get("filename", "resume"),
                     "resume_name": doc.get("filename", "resume"),
-                    "job_title": "Software Engineer",
+                    "job_title": inferred_role,
                     "ats_score": doc.get("ats_score", 0),
                     "keyword_match": doc.get("keyword_match", 0),
                     "missing_keywords": doc.get("missing_keywords", []),
                     "date": doc.get("created_at", ""),
                     "created_at": doc.get("created_at", ""),
-                    "analysis_result": doc.get("analysis_result", {}),
+                    "analysis_result": analysis_result,
                 })
             return results
     except Exception as exc:

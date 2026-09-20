@@ -4,14 +4,16 @@ from pathlib import Path
 
 # Put the repo root on sys.path so `from frontend.views import ...` resolves
 # regardless of the directory streamlit was launched from.
-sys.path.insert(0, str(Path(__file__).parent.parent))
+REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO_ROOT))
 
 # Configure page
 st.set_page_config(
     page_title="Resume ATS Scorer",
     page_icon="🎯",
     layout="wide",
-    initial_sidebar_state="collapsed" # Collapsed since we are using a top navbar
+    initial_sidebar_state="collapsed", # Collapsed since we are using a top navbar
+    menu_items={}
 )
 
 # Auth state. Populated by Supabase sign-in / sign-up / OAuth.
@@ -71,9 +73,30 @@ st.markdown("""
     .block-container {
         padding-left: 1rem !important;
         padding-right: 1rem !important;
-        padding-top: 0rem !important; /* Keep a little space at the top */
+        padding-top: 0rem !important;
         padding-bottom: 0rem !important;
         max-width: 100% !important;
+    }
+
+    div[data-testid="stMain"] {
+        padding-top: 88px !important;
+    }
+
+    .stApp {
+        margin-top: 0 !important;
+    }
+
+    /* Hide Streamlit default toolbar, deploy controls, and status widget */
+    header[data-testid="stHeader"] {
+        display: none !important;
+    }
+
+    div[data-testid="stToolbar"] {
+        display: none !important;
+    }
+
+    div[data-testid="stStatusWidget"] {
+        display: none !important;
     }
 </style>
 """, unsafe_allow_html=True)

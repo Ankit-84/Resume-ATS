@@ -17,10 +17,12 @@ DEFAULT_BACKEND_URL = "http://127.0.0.1:8000"
 
 
 def _backend_url() -> str:
-    try:
-        configured_url = st.secrets["backend"]["url"]
-    except (KeyError, FileNotFoundError):
-        configured_url = os.getenv("BACKEND_URL") or os.getenv("url")
+    configured_url = os.getenv("BACKEND_URL") or os.getenv("url")
+    if not configured_url:
+        try:
+            configured_url = st.secrets["backend"]["url"]
+        except (KeyError, FileNotFoundError):
+            configured_url = None
     backend_url = (configured_url or DEFAULT_BACKEND_URL).rstrip("/")
     return backend_url.replace("://localhost", "://127.0.0.1", 1)
 

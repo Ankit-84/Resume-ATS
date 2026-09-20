@@ -112,8 +112,8 @@ opacity: 0.8;
 <div class="footer-col">
 <h4>💡 Connect</h4>
 <ul class="footer-links">
-<li><a href="#" target="_blank"><span>🐙</span> GitHub Repository</a></li>
-<li><a href="#" target="_blank"><span>💼</span> LinkedIn</a></li>
+<li><a href=" https://github.com/Ankit-84/Resume-ATS" target="_blank"><span>🐙</span> GitHub Repository</a></li>
+<li><a href="https://www.linkedin.com/in/ankit-kumar-922ankit" target="_blank"><span>💼</span> LinkedIn</a></li>
 <li><a href="#" target="_blank"><span>✉️</span> Contact Support</a></li>
 <li><a href="#" target="_blank"><span>🔒</span> Privacy Policy</a></li>
 </ul>

@@ -5,6 +5,7 @@ import streamlit as st
 
 from frontend.services import api_client
 from frontend.components.dashboard import display_results_dashboard
+from frontend.components.career_features import render_jd_feature_suite, render_multi_analysis_results
 
 
 def _read_jd(jd_file, jd_text: str) -> str:
@@ -20,6 +21,21 @@ def _read_jd(jd_file, jd_text: str) -> str:
         "if you have a PDF or DOCX."
     )
     return ""
+
+
+def _read_multiple_jds(jd_files, jd_text: str) -> list[tuple[str, str]]:
+    jobs = []
+    if jd_files:
+        for index, jd_file in enumerate(jd_files, start=1):
+            content = jd_file.getvalue().decode("utf-8", errors="ignore").strip()
+            if content:
+                jobs.append((jd_file.name or f"Role {index}", content))
+    if jd_text:
+        for index, content in enumerate(jd_text.split("\n---\n"), start=1):
+            content = content.strip()
+            if content:
+                jobs.append((f"Role {index}", content))
+    return jobs[:5]
 
 
 def _show_backend_error(exc: Exception) -> None:
@@ -83,7 +99,33 @@ def _render_upload_area(analysis_mode: str):
 
     with right:
         with st.container(border=True):
-            if analysis_mode == "Job Description Comparison":
+            if analysis_mode == "Multiple Job Comparison":
+                st.markdown("#### 2️⃣ Multiple Job Descriptions")
+                st.caption("Add 3–5 JDs as .txt files or paste them separated by ---.")
+                multi_method = st.radio(
+                    "Multiple JD input method",
+                    ["Paste JDs", "Upload .txt Files"],
+                    horizontal=True,
+                    key="multi_jd_input_method",
+                    label_visibility="collapsed",
+                )
+                if multi_method == "Upload .txt Files":
+                    jd_file = st.file_uploader(
+                        "Upload 3–5 job descriptions",
+                        type=["txt"],
+                        accept_multiple_files=True,
+                        key="multi_jd_upload",
+                        label_visibility="collapsed",
+                    )
+                else:
+                    jd_text = st.text_area(
+                        "Paste multiple job descriptions",
+                        height=180,
+                        placeholder="Job description 1\n---\nJob description 2\n---\nJob description 3",
+                        key="multi_jd_text",
+                        label_visibility="collapsed",
+                    )
+            elif analysis_mode == "Job Description Comparison":
                 st.markdown("#### 2️⃣ Target Job Description")
                 st.caption("Provide the JD to calculate your match rate.")
                 
@@ -116,7 +158,7 @@ def _render_upload_area(analysis_mode: str):
                         st.success(f"✅ Text added ({len(jd_text)} characters)")
             else:
                 st.markdown("#### 2️⃣ Target Job Description")
-                st.info("💡 **Pro Tip:** Switch to 'Job Description Comparison' mode in the settings above to unlock targeted JD matching.")
+                st.info("💡 Switch to a targeted comparison mode above to unlock JD matching.")
 
     return resume_file, jd_file, jd_text
 
@@ -172,6 +214,7 @@ def render() -> None:
         .scorer-header {
             text-align: center;
             padding: 2.5rem 1rem;
+            margin-top : 3rem !important;
             background: linear-gradient(135deg, #1e1b4b 0%, #4F46E5 100%);
             color: white;
             border-radius: 16px;
@@ -215,15 +258,18 @@ def render() -> None:
         st.caption("Choose how you want our AI to evaluate your resume.")
         analysis_mode = st.radio(
             "Select Analysis Mode:",
-            ["General ATS Score", "Job Description Comparison"],
+            ["General ATS Score", "Job Description Comparison", "Multiple Job Comparison"],
             horizontal=True,
+            key="analysis_mode",
             label_visibility="collapsed"
         )
         
         if analysis_mode == "General ATS Score":
             st.info("🔍 **General Mode:** Evaluates overall formatting, standard keywords, and readability.")
-        else:
+        elif analysis_mode == "Job Description Comparison":
             st.success("🎯 **Targeted Mode:** Compares your resume against a specific job description to find missing skills.")
+        else:
+            st.success("📊 **Multi-Job Mode:** Runs the same resume against 3–5 job descriptions and ranks the best fit.")
 
     st.write("")
     
@@ -245,13 +291,26 @@ def render() -> None:
             st.markdown("---")
             st.markdown("### 🕒 Previous Analysis Results")
             display_results_dashboard(st.session_state["scorer_analysis"])
+            if st.session_state["scorer_analysis"].get("jd_comparison") or st.session_state["scorer_analysis"].get("jd_match_analysis"):
+                render_jd_feature_suite(st.session_state["scorer_analysis"], st.session_state.get("scorer_jd_text", ""))
             _render_export_buttons(st.session_state["scorer_analysis"])
+        if st.session_state.get("scorer_multi_results"):
+            st.markdown("---")
+            render_multi_analysis_results(st.session_state["scorer_multi_results"])
         return
 
     access_token = st.session_state.get("access_token")
     if not access_token:
         st.error("🔒 **Authentication Required:** Please log in or create an account using the navigation bar above to analyze your resume.")
         return
+
+    if analysis_mode == "Multiple Job Comparison":
+        multiple_jobs = _read_multiple_jds(jd_file, jd_text)
+        if len(multiple_jobs) < 3:
+            st.warning("Add at least 3 job descriptions to run a multiple-job comparison.")
+            return
+    else:
+        multiple_jobs = []
 
     _, mid, _ = st.columns([1, 1.5, 1])
     with mid:
@@ -262,7 +321,12 @@ def render() -> None:
         if st.session_state.get("scorer_analysis"):
             st.markdown("---")
             display_results_dashboard(st.session_state["scorer_analysis"])
+            if st.session_state["scorer_analysis"].get("jd_comparison") or st.session_state["scorer_analysis"].get("jd_match_analysis"):
+                render_jd_feature_suite(st.session_state["scorer_analysis"], st.session_state.get("scorer_jd_text", ""))
             _render_export_buttons(st.session_state["scorer_analysis"])
+        if st.session_state.get("scorer_multi_results"):
+            st.markdown("---")
+            render_multi_analysis_results(st.session_state["scorer_multi_results"])
         return
 
     # ==========================================
@@ -271,6 +335,30 @@ def render() -> None:
     # Fresh analysis — drop any cached PDF/result.
     st.session_state.pop("scorer_pdf_bytes", None)
     st.session_state.pop("scorer_analysis", None)
+    st.session_state.pop("scorer_multi_results", None)
+
+    if analysis_mode == "Multiple Job Comparison":
+        try:
+            multi_results = []
+            with st.status("🧠 Comparing your resume with each job...", expanded=True) as status:
+                for index, (label, job_description) in enumerate(multiple_jobs, start=1):
+                    st.write(f"🔍 Analyzing job {index} of {len(multiple_jobs)}: {label}")
+                    result = api_client.analyze_resume(
+                        resume_file=resume_file,
+                        access_token=access_token,
+                        job_description=job_description,
+                    )
+                    multi_results.append({"label": label, "analysis": result})
+                status.update(label="✅ Multiple job comparison complete!", state="complete", expanded=False)
+        except requests.RequestException as exc:
+            _show_backend_error(exc)
+            return
+
+        st.session_state["scorer_multi_results"] = multi_results
+        st.balloons()
+        st.markdown("---")
+        render_multi_analysis_results(multi_results)
+        return
 
     job_description = _read_jd(jd_file, jd_text) if analysis_mode == "Job Description Comparison" else ""
 
@@ -293,8 +381,11 @@ def render() -> None:
 
     # Save to state and display
     st.session_state["scorer_analysis"] = analysis
+    st.session_state["scorer_jd_text"] = job_description
     st.balloons() # Fun interactive celebration
-    
+
     st.markdown("---")
     display_results_dashboard(analysis)
+    if analysis_mode == "Job Description Comparison":
+        render_jd_feature_suite(analysis, job_description)
     _render_export_buttons(analysis)

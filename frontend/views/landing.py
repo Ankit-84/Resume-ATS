@@ -11,13 +11,13 @@ def render():
         .hero-container {
             text-align: center;
             padding: 4rem 2rem;
+            margin-top : 3rem !important;
             background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 50%, #EC4899 100%);
             color: white;
             border-radius: 20px;
             margin-bottom: 2rem;
             box-shadow: 0 15px 35px rgba(124, 58, 237, 0.3);
             animation: fadeInDown 0.8s ease-out;
-            width: 95vw;
             
         }
         .hero-title {
