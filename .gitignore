@@ -9,4 +9,6 @@ __pycache__/
 # Logs
 *.log
 
-
+# ML models
+*.safetensors
+*.pkl
