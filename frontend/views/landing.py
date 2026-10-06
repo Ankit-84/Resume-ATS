@@ -109,7 +109,11 @@ def render():
         st.info("**Example Feedback:** Your experience section lists 'Python' as a skill, but you haven't detailed any projects using it. *Suggestion: Add a bullet point quantifying your Python experience (e.g., 'Built a web scraper using Python that saved 10 hours/week').*")
         
     with tab3:
-        st.success("**100% Local Processing:** Unlike other platforms, we don't send your resume to OpenAI or external APIs. Everything runs directly on your machine. Your personal data stays entirely yours.")
+        st.info(
+            "**Privacy note:** Resume analysis and interview coaching use the configured Groq AI "
+            "service. Resumes, job descriptions, and (when used) interview audio and answers are "
+            "sent to that service for processing. Interview sessions are not saved to account history."
+        )
 
     st.divider()
 
@@ -137,6 +141,16 @@ def render():
             st.subheader("📄 Multi-Format Support")
             st.write("Upload your resume exactly how you export it. We support deep text extraction from:")
             st.markdown("- `.PDF` (Standard)\n- `.DOCX` (Word)\n- `.TXT` (Plain text)")
+
+    with st.container(border=True):
+        st.subheader("🎙️ Interview Co-Pilot")
+        st.write(
+            "Turn your resume and a target job description into a personalized mock interview. "
+            "Hear each question, practice by voice or text, and get practical feedback on every answer."
+        )
+        if st.button("Practice a tailored interview", type="primary"):
+            st.session_state.current_view = 'interview'
+            st.rerun()
 
     st.divider()
 

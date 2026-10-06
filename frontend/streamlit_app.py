@@ -126,6 +126,10 @@ elif st.session_state.current_view == 'resources':
     from frontend.views import resources
     resources.render()
 
+elif st.session_state.current_view == 'interview':
+    from frontend.views import interview
+    interview.render()
+
 elif st.session_state.current_view == 'auth':
     from frontend.views import auth
     auth.render()

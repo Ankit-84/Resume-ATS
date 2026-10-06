@@ -5,7 +5,16 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Uplo
 from starlette.concurrency import run_in_threadpool
 
 from backend.api.auth import get_current_user
-from backend.models.schemas import AnalysisResponse, ComponentScores, JDComparison, SkillValidationDetails
+from backend.models.schemas import (
+    AnalysisResponse,
+    ComponentScores,
+    InterviewAnswerFeedback,
+    InterviewAnswerRequest,
+    InterviewSessionPlan,
+    InterviewTranscription,
+    JDComparison,
+    SkillValidationDetails,
+)
 from backend.utils.file_utils import (
     get_default_grammar_results,
     get_default_location_results,
@@ -125,6 +134,133 @@ async def analyze_resume(
         logger.warning(f'History save failed (non-blocking): {exc}')
 
     return response
+
+
+@router.post('/interview/sessions', response_model=InterviewSessionPlan)
+async def create_interview_session(
+    resume: UploadFile = File(..., description='Resume file — PDF or DOCX, max 5 MB'),
+    job_description: str = Form(
+        ..., min_length=30, max_length=20000, description='Target job description'
+    ),
+    question_count: int = Form(5, ge=3, le=8),
+    user_id: str = Depends(get_current_user),
+):
+    try:
+        from backend.services.resume_parser import (
+            FileParsingError,
+            FileValidationError,
+            parse_resume_file,
+        )
+
+        file_bytes = await resume.read()
+        resume_text, _metadata = parse_resume_file(
+            file_bytes,
+            resume.filename or 'resume',
+        )
+    except (FileParsingError, FileValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception as exc:
+        logger.error('Interview resume parsing failed: %s', exc)
+        raise HTTPException(status_code=422, detail='Could not parse the uploaded resume.') from exc
+    finally:
+        await resume.close()
+
+    if not resume_text.strip():
+        raise HTTPException(status_code=422, detail='No readable text was found in the resume.')
+
+    job_description = job_description.strip()
+    if len(job_description) < 30:
+        raise HTTPException(
+            status_code=422,
+            detail='The job description must contain at least 30 non-whitespace characters.',
+        )
+
+    try:
+        from backend.services.interview_engine import generate_interview_plan
+
+        return await run_in_threadpool(
+            generate_interview_plan,
+            resume_text,
+            job_description,
+            question_count,
+        )
+    except Exception as exc:
+        logger.error('Interview plan generation failed: %s', exc)
+        raise HTTPException(
+            status_code=502,
+            detail='Could not generate interview questions. Please try again shortly.',
+        ) from exc
+
+
+@router.post('/interview/transcribe', response_model=InterviewTranscription)
+async def transcribe_interview_answer(
+    audio: UploadFile = File(..., description='Recorded answer audio, max 10 MB'),
+    user_id: str = Depends(get_current_user),
+):
+    content_type = (audio.content_type or '').split(';', 1)[0].strip().lower()
+    allowed_types = {
+        'audio/webm',
+        'audio/wav',
+        'audio/x-wav',
+        'audio/ogg',
+        'audio/mpeg',
+        'audio/mp4',
+        'audio/x-m4a',
+    }
+    if content_type not in allowed_types:
+        raise HTTPException(status_code=415, detail='Please record audio in a supported format.')
+
+    audio_bytes = await audio.read(10 * 1024 * 1024 + 1)
+    await audio.close()
+    if not audio_bytes:
+        raise HTTPException(status_code=422, detail='The recording is empty.')
+    if len(audio_bytes) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail='Recordings must be 10 MB or smaller.')
+
+    try:
+        from backend.services.interview_engine import transcribe_answer
+
+        transcript = await run_in_threadpool(
+            transcribe_answer,
+            audio.filename or 'answer.webm',
+            audio_bytes,
+        )
+        return {'transcript': transcript}
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception as exc:
+        logger.error('Interview audio transcription failed: %s', exc)
+        raise HTTPException(
+            status_code=502,
+            detail='Could not transcribe the recording. Please try again or type your answer.',
+        ) from exc
+
+
+@router.post('/interview/evaluate', response_model=InterviewAnswerFeedback)
+async def evaluate_interview_answer(
+    payload: InterviewAnswerRequest,
+    user_id: str = Depends(get_current_user),
+):
+    if not payload.question.strip() or not payload.answer.strip():
+        raise HTTPException(status_code=422, detail='Question and answer must not be blank.')
+
+    try:
+        from backend.services.interview_engine import evaluate_answer
+
+        return await run_in_threadpool(
+            evaluate_answer,
+            payload.question.strip(),
+            payload.answer.strip(),
+            payload.role_title.strip(),
+            payload.job_description.strip(),
+        )
+    except Exception as exc:
+        logger.error('Interview answer evaluation failed: %s', exc)
+        raise HTTPException(
+            status_code=502,
+            detail='Could not evaluate that answer. Please try again shortly.',
+        ) from exc
+
 
 @router.get('/health')
 async def health_check(request: Request):

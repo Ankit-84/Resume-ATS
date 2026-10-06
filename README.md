@@ -4,13 +4,19 @@ AI-powered resume analysis and job-application optimization platform built with 
 
 ## Overview
 
-Resume ATS Scorer helps candidates understand how an Applicant Tracking System may evaluate a resume and gives practical, ready-to-use improvements. It supports PDF, DOC, and DOCX uploads, optional job-description matching, skill evidence validation, rewrite suggestions, version comparisons, and downloadable reports.
+Resume ATS Scorer helps candidates understand how an Applicant Tracking System may evaluate a resume and gives practical, ready-to-use improvements. It supports PDF, DOC, and DOCX uploads, optional job-description matching, skill evidence validation, rewrite suggestions, version comparisons, downloadable reports, and tailored mock interviews.
 
 The application uses a decoupled architecture:
 
 - `backend/`: FastAPI API, document parsing, scoring, AI analysis, persistence, and PDF generation.
 - `frontend/`: Streamlit interface, authentication flow, analysis dashboard, history, and exports.
 - `ml model/`: Local Sentence Transformer model assets and evaluation files.
+
+### Interview Co-Pilot
+
+Sign in, open **Interview Co-Pilot** from the navigation bar, upload a PDF or DOCX resume, and paste a target job description. The coach identifies preparation areas and generates 3–8 role-specific technical and behavioral questions. Each question can be spoken by the browser; record an answer and transcribe it with Groq Whisper, or type an answer instead. Groq then returns a practice score and actionable feedback. Interview sessions remain in the active Streamlit session and are not added to account history.
+
+The co-pilot sends resume and job-description text to the configured Groq service for question generation, recorded audio for transcription, and answers plus the job description for evaluation. Do not upload information you are not comfortable sharing with that configured provider. Interview scores are coaching aids, not hiring assessments.
 
 ## Features
 
@@ -267,6 +273,9 @@ All analysis, history, and PDF routes are under `/api/v1` and require a Supabase
 | Method | Route | Purpose |
 | --- | --- | --- |
 | `POST` | `/api/v1/analyze-resume` | Analyze a PDF, DOC, or DOCX resume with an optional JD |
+| `POST` | `/api/v1/interview/sessions` | Generate tailored interview questions and resume-based preparation areas |
+| `POST` | `/api/v1/interview/transcribe` | Transcribe a recorded answer with Groq Whisper |
+| `POST` | `/api/v1/interview/evaluate` | Score an answer and return coaching feedback |
 | `GET` | `/api/v1/health` | Confirm that the API and its models are loaded |
 | `GET` | `/api/v1/history` | List the signed-in user's saved analyses |
 | `DELETE` | `/api/v1/history/{analysis_id}` | Delete one saved analysis |
@@ -284,6 +293,8 @@ All analysis, history, and PDF routes are under `/api/v1` and require a Supabase
 7. Review the score breakdown, section checklist, Enhancement Lab, Rewrite Mode, and detailed recommendations.
 8. Use the JD tools, generate a PDF report, or download a text summary.
 9. Run improved resume versions again and compare them from History.
+
+For interview practice, open `Interview Co-Pilot`, provide a resume and target job description, then answer the generated questions by recording or typing. Use the final per-answer scores and coaching notes to guide another practice round.
 
 Protected endpoints require:
 

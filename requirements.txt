@@ -40,6 +40,6 @@ groq                 # Groq LLM client (0.13+ is required for httpx>=0.28 compat
 PyJWT[crypto]        # verifies Supabase access tokens (HS256)
 
 # ── Frontend ──
-streamlit
+streamlit>=1.41
 requests
 supabase               # frontend auth client (email/password + OAuth)

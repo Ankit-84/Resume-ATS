@@ -68,6 +68,68 @@ def analyze_resume(
     return response.json()
 
 
+def create_interview_session(
+    resume_file,
+    job_description: str,
+    access_token: str,
+    question_count: int = 5,
+) -> Dict[str, Any]:
+    files = {
+        "resume": (resume_file.name, resume_file.getvalue(), resume_file.type),
+    }
+    response = _request_with_retry(
+        "POST",
+        f"{_backend_url()}/api/v1/interview/sessions",
+        files=files,
+        data={
+            "job_description": job_description,
+            "question_count": question_count,
+        },
+        headers=_auth_headers(access_token),
+        timeout=180,
+    )
+    response.raise_for_status()
+    return response.json()
+
+
+def transcribe_interview_answer(audio_file, access_token: str) -> str:
+    files = {
+        "audio": (audio_file.name, audio_file.getvalue(), audio_file.type),
+    }
+    response = _request_with_retry(
+        "POST",
+        f"{_backend_url()}/api/v1/interview/transcribe",
+        files=files,
+        headers=_auth_headers(access_token),
+        timeout=90,
+    )
+    response.raise_for_status()
+    return response.json()["transcript"]
+
+
+def evaluate_interview_answer(
+    role_title: str,
+    job_description: str,
+    question: str,
+    answer: str,
+    access_token: str,
+) -> Dict[str, Any]:
+    response = _request_with_retry(
+        "POST",
+        f"{_backend_url()}/api/v1/interview/evaluate",
+        json={
+            "role_title": role_title,
+            "job_description": job_description,
+            "question": question,
+            "answer": answer,
+        },
+        headers=_auth_headers(access_token),
+        timeout=120,
+    )
+    response.raise_for_status()
+    return response.json()
+
+
 def get_history(access_token: str) -> List[Dict[str, Any]]:
     response = requests.get(
         f"{_backend_url()}/api/v1/history",

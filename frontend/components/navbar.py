@@ -119,6 +119,9 @@ def render_navbar():
         if st.button("🎯 ATS Scorer", key="mob_scorer", use_container_width=True):
             st.session_state.current_view = 'scorer'
             st.rerun()
+        if st.button("🎙️ Interview Co-Pilot", key="mob_interview", use_container_width=True):
+            st.session_state.current_view = 'interview'
+            st.rerun()
         if st.button("📊 History", key="mob_history", use_container_width=True):
             st.session_state.current_view = 'history'
             st.rerun()
@@ -144,7 +147,7 @@ def render_navbar():
     # ==========================================
     # 💻 DESKTOP NAVBAR (Horizontal Columns)
     # ==========================================
-    cols = st.columns([1, 1.2, 1, 1.2, 2, 1.5], gap="small")
+    cols = st.columns([0.9, 1.05, 1.25, 1, 1.15, 1, 1.4], gap="small")
     
     with cols[0]:
         # Unique ID anchor allows CSS to safely target this horizontal block
@@ -159,19 +162,24 @@ def render_navbar():
             st.rerun()
             
     with cols[2]:
+        if st.button("🎙️ Interview", key="desk_interview", use_container_width=True):
+            st.session_state.current_view = 'interview'
+            st.rerun()
+
+    with cols[3]:
         if st.button("📊 History", key="desk_history", use_container_width=True):
             st.session_state.current_view = 'history'
             st.rerun()
             
-    with cols[3]:
+    with cols[4]:
         if st.button("📚 Resources", key="desk_resources", use_container_width=True):
             st.session_state.current_view = 'resources'
             st.rerun()
             
-    with cols[4]:
+    with cols[5]:
         st.empty() # Spacer
         
-    with cols[5]:
+    with cols[6]:
         if st.session_state.access_token:
             display_email = st.session_state.user_email.split('@')[0]
             if st.button(f"👤 {display_email} (Logout)", key="desk_logout", use_container_width=True):
